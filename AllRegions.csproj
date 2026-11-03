@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- A BepInEx 6 plugin for an IL2CPP Unity game. Built against the interop assemblies BepInEx
+       generated on this PC (none of them are copied into the output). Build with build.ps1, or dotnet build -c Release -p:GameDir="<game folder>". -->
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>AllRegions</AssemblyName>
+    <RootNamespace>AllRegions</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <DefineConstants>$(DefineConstants);IL2CPP</DefineConstants>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DebugType>embedded</DebugType>
+    <GameDir Condition="'$(GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\PICO PARK 2</GameDir>
+    <CoreDir>$(GameDir)\BepInEx\core</CoreDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="$(CoreDir)\BepInEx.Core.dll" Private="false" />
+    <Reference Include="$(CoreDir)\BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="$(CoreDir)\BepInEx.Unity.Common.dll" Private="false" />
+    <Reference Include="$(CoreDir)\0Harmony.dll" Private="false" />
+    <Reference Include="$(CoreDir)\Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="$(CoreDir)\Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="$(GameDir)\BepInEx\interop\*.dll" Private="false" />
+  </ItemGroup>
+</Project>
