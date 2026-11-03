@@ -32,7 +32,7 @@
     {
         public const string Guid = "modwright.picopark2.allregions";
         public const string PluginName = "AllRegions";
-        public const string Version = "0.4.0";
+        public const string Version = "0.4.1";
 
         internal static ManualLogSource Logger;
         internal static ConfigEntry<bool> Enabled;
@@ -213,8 +213,38 @@
         internal static Scanner I;
         private void Awake() => I = this;
 
+        private static bool quitting;
+
+        // Unity calls this before the game exits. Extra connections still open (a search in progress, or ones
+        // being closed) have their own network threads, and the game hangs on exit if they keep running:
+        // stop them at once, without the polite disconnect a normal close does.
+        private void OnApplicationQuit() => Shutdown("the game is closing");
+        private void OnDestroy() => Shutdown("the mod was unloaded");
+
+        private void Shutdown(string why)
+        {
+            if (quitting) return;
+            quitting = true;
+            int n = jobs.Count + closing.Count;
+            todo.Clear();
+            foreach (var j in jobs) Kill(j.Conn);
+            foreach (var (c, _) in closing) Kill(c);
+            jobs.Clear();
+            closing.Clear();
+            scanTotal = 0;
+            PendingRoom = null;
+            Diag.Info($"shut down ({why}), {n} extra connections stopped");
+        }
+
+        private static void Kill(GameConnection c)
+        {
+            try { c.m_Client?.LoadBalancingPeer?.StopThread(); } catch { }
+            try { c.destroyClient(); } catch { }
+        }
+
         private void Update()
         {
+            if (quitting) return;
             ServiceClosing();
             try
             {
@@ -362,7 +392,8 @@
         private void WatchUpdateButton()
         {
             var m = Menu();
-            if (m == null || !Plugin.Enabled.Value) { lastUpdateTimer = float.NaN; return; }
+            // During a join the list restarts and its timer resets; that is not a press.
+            if (m == null || !Plugin.Enabled.Value || PendingRoom != null) { lastUpdateTimer = float.NaN; return; }
             float t = m.m_UpdateDisableTimer;
             if (!float.IsNaN(lastUpdateTimer) && Mathf.Abs(t - lastUpdateTimer) > 0.5f) RescanNow();
             lastUpdateTimer = t;
@@ -500,6 +531,7 @@
         /// </summary>
         private void OnGUI()
         {
+            if (quitting) return;
             try { DrawSearching(); }
             catch (Exception e) { Diag.ErrorOnce("indicator", e); }
         }
